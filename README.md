@@ -1,1 +1,0 @@
-# qa-pipeline-demo
