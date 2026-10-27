@@ -1,0 +1,76 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch: # adds a "Run workflow" button on the Actions tab
+
+jobs:
+  # Quick check that the sites are up and the critical paths work.
+  # If this fails, there's no point running the full suite.
+  smoke:
+    name: Smoke tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Once package-lock.json is committed, switch this to `npm ci` and add
+      # `cache: npm` to the setup-node step above for faster, reproducible installs.
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run smoke tests
+        run: npm run test:smoke
+
+      - name: Upload HTML report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-smoke
+          path: playwright-report/
+          retention-days: 14
+
+  regression:
+    name: ${{ matrix.project }} regression
+    needs: smoke # only runs if the smoke job passed
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false # let the API tests finish even if the UI tests fail (and vice versa)
+      matrix:
+        project: [ui, api]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright browser
+        if: matrix.project == 'ui'
+        run: npx playwright install --with-deps chromium
+
+      - name: Run ${{ matrix.project }} tests
+        run: npx playwright test --project=${{ matrix.project }}
+
+      - name: Upload HTML report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.project }}
+          path: playwright-report/
+          retention-days: 14
