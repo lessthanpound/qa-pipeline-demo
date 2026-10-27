@@ -8,7 +8,7 @@ test.describe('Login', () => {
   test('standard user can log in', { tag: '@smoke' }, async ({ page, loginPage, inventoryPage }) => {
     await loginPage.login('standard_user');
     await expect(page).toHaveURL(/\/inventory\.html$/);
-    await expect(inventoryPage.title).toHaveText('Testnope');
+    await expect(inventoryPage.title).toHaveText('Products');
   });
 
   test('locked out user sees an error', async ({ loginPage }) => {
