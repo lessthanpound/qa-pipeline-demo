@@ -22,8 +22,7 @@ jobs:
           node-version: 22
           cache: npm
 
-      # Once package-lock.json is committed, switch this to `npm ci` and add
-      # `cache: npm` to the setup-node step above for faster, reproducible installs.
+      
       - name: Install dependencies
         run: npm ci
 
