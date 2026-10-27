@@ -7,7 +7,9 @@ export default defineConfig({
   forbidOnly: isCI,              // fail CI if someone leaves a test.only in
   retries: isCI ? 2 : 0,         // public demo sites can be flaky
   workers: isCI ? 2 : undefined,
-  reporter: isCI ? [['html', { open: 'never' }], ['github']] : 'list',
+  reporter: isCI
+    ? [['html', { open: 'never' }], ['github']]
+    : [['list'], ['html', { open: 'never' }]], // `npm run report` opens the HTML report
 
   use: {
     trace: 'on-first-retry',

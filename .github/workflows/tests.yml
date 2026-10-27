@@ -74,3 +74,49 @@ jobs:
           name: playwright-report-${{ matrix.project }}
           path: playwright-report/
           retention-days: 14
+
+  # Publishes every report from this run to GitHub Pages so it can be opened from a link,
+  # e.g. https://<owner>.github.io/<repo>/<run number>/
+  publish-reports:
+    name: Publish reports
+    needs: [smoke, regression]
+    if: ${{ !cancelled() }} # publish even when tests fail - that's when you need the report most
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # to push to the gh-pages branch
+    concurrency:
+      group: gh-pages # two runs pushing to gh-pages at once would conflict
+      cancel-in-progress: false
+
+    steps:
+      - name: Download reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: playwright-report-*
+          path: reports
+
+      - name: Arrange reports by run number
+        run: |
+          dest="site/${{ github.run_number }}"
+          mkdir -p "$dest"
+          links=""
+          for dir in reports/playwright-report-*; do
+            suite="${dir#reports/playwright-report-}" # smoke, ui or api
+            mv "$dir" "$dest/$suite"
+            links="$links<li><a href=\"$suite/\">$suite</a></li>"
+          done
+          echo "<!doctype html><title>Run ${{ github.run_number }}</title><h1>Test reports for run ${{ github.run_number }}</h1><ul>$links</ul>" > "$dest/index.html"
+
+      - name: Push to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: site
+          keep_files: true # keep reports from earlier runs
+          commit_message: "Reports for run ${{ github.run_number }}"
+
+      - name: Add report link to the run summary
+        run: |
+          url="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/${{ github.run_number }}/"
+          echo "### 📊 [Open the test reports]($url)" >> "$GITHUB_STEP_SUMMARY"
+          echo "$url"

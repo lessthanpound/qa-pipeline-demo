@@ -44,8 +44,14 @@ pull request, and on demand from the Actions tab:
    auth, create booking). If any fail, the pipeline stops here.
 2. **Regression**: runs the full UI and API suites as two parallel jobs.
 
-Each job uploads its HTML report as an artifact, which you can download from the
-run's summary page.
+3. **Publish reports**: copies every report from the run to GitHub Pages, at
+   `https://lessthanpound.github.io/qa-pipeline-demo/<run number>/`. The link is shown at
+   the top of the run's summary page. Reports are also kept as downloadable artifacts
+   for 14 days.
+
+GitHub Pages must be turned on once: **Settings → Pages → Build and deployment →
+Source: Deploy from a branch → `gh-pages` / `(root)`**. The `gh-pages` branch is created
+by the first pipeline run. Note that reports on Pages are public.
 
 To mark a test as smoke, add the tag: `test('name', { tag: '@smoke' }, async (...) => { ... })`.
 
